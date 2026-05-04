@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#030305">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>MuSync</title>
+    
+    <!-- PWA Manifest Injection (Dynamic) -->
+    <link id="manifest-link" rel="manifest" href="">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23030305'/%3E%3Cpath fill='url(%23a)' d='M180 140l190 116-190 116z'/%3E%3Cdefs%3E%3ClinearGradient id='a' x1='180' y1='140' x2='370' y2='256' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%23f43f5e'/%3E%3Cstop offset='1' stop-color='%23a855f7'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Outfit', 'sans-serif'] },
+                    colors: {
+                        dark: '#030305',
+                        surface: '#0f0f13',
+                        surface2: '#1a1a20',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { background-color: #030305; font-family: 'Outfit', sans-serif; -webkit-tap-highlight-color: transparent; overscroll-behavior-y: none; }
+        
+        /* Modern Range Slider */
+        .slider-container:hover .thumb-visible::-webkit-slider-thumb { opacity: 1; transform: scale(1); }
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 12px; width: 12px; border-radius: 50%; background: #fff; cursor: pointer; margin-top: -4px; opacity: 0; transform: scale(0.5); transition: all 0.2s ease; box-shadow: 0 0 10px rgba(0,0,0,0.5); }
+        input[type=range]:focus::-webkit-slider-thumb { opacity: 1; transform: scale(1); }
+        input[type=range]:disabled::-webkit-slider-thumb { opacity: 0; }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 4px; cursor: pointer; background: transparent; border-radius: 2px; }
+        
+        /* Custom Progress Fills */
+        .progress-fill { position: absolute; height: 4px; background: white; border-radius: 2px; pointer-events: none; transition: width 0.1s linear; }
+        .progress-fill.disabled { background: #52525b; }
+        .buffer-fill { position: absolute; height: 4px; background: rgba(255,255,255,0.15); border-radius: 2px; pointer-events: none; transition: width 0.2s linear; }
+        .track-bg { position: absolute; width: 100%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; pointer-events: none; }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #3f3f46; }
+
+        /* Glassmorphism */
+        .glass { background: rgba(15, 15, 19, 0.7); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(255, 255, 255, 0.05); }
+        
+        /* Gradient Text */
+        .text-gradient { background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-image: linear-gradient(to right, #f43f5e, #a855f7); }
+        .bg-gradient-btn { background-image: linear-gradient(to right, #f43f5e, #a855f7); }
+        .bg-gradient-btn:hover { background-image: linear-gradient(to right, #e11d48, #9333ea); }
+    </style>
+</head>
+<body class="text-zinc-100 selection:bg-rose-500/30 min-h-screen pb-12 flex flex-col relative">
+
+    <!-- Ambient Background Glow -->
+    <div class="fixed top-0 left-1/2 -translate-x-1/2 w-full max-w-lg h-96 bg-rose-500/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+    <div class="fixed bottom-0 right-0 w-96 h-96 bg-purple-500/10 blur-[120px] rounded-full pointer-events-none -z-10"></div>
+
+    <!-- Modal de Ajustes -->
+    <div id="settings-modal" class="hidden fixed inset-0 bg-black/60 z-50 flex items-center justify-center backdrop-blur-md transition-opacity px-4">
+        <div class="glass rounded-3xl p-6 w-full max-w-sm shadow-2xl relative transform transition-transform scale-100 border border-white/10">
+            <button id="btn-close-settings" class="absolute top-5 right-5 text-zinc-400 hover:text-white transition-colors bg-white/5 p-2 rounded-full">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <h2 class="text-xl font-bold mb-6 flex items-center gap-2 text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-rose-400"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                Ajustes
+            </h2>
+
+            <div class="flex items-center justify-between p-4 bg-black/40 rounded-2xl border border-white/5 mb-4">
+                <div class="pr-4">
+                    <h3 class="font-semibold text-sm text-zinc-100">Streaming (Beta)</h3>
+                    <p class="text-[11px] text-zinc-400 mt-1 leading-tight">Usa endpoint directo para vídeos largos en lugar de caché.</p>
+                </div>
+                <button id="btn-toggle-beta" class="w-12 h-6 rounded-full bg-surface2 relative transition-colors duration-300 shrink-0 outline-none border border-white/10 shadow-inner">
+                    <div id="toggle-knob" class="w-4 h-4 rounded-full bg-white absolute top-1 left-1 transition-transform duration-300 shadow-sm"></div>
+                </button>
+            </div>
+            
+            <button id="btn-install-pwa" class="hidden w-full flex items-center justify-center gap-2 p-3 bg-gradient-btn rounded-2xl font-semibold text-sm shadow-lg text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Instalar App en el Móvil
+            </button>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="sticky top-0 z-10 glass border-b-0 border-white/5 shadow-sm">
+        <div class="max-w-4xl mx-auto px-4 h-16 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-9 h-9 rounded-xl bg-gradient-btn flex items-center justify-center shadow-lg shadow-rose-500/20">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight">Mu<span class="text-gradient">Sync</span></h1>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button id="btn-settings" class="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center text-zinc-400 hover:text-white transition-all" title="Ajustes">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                </button>
+                <button id="btn-leave" class="hidden w-9 h-9 rounded-full bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white flex items-center justify-center transition-all">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto px-4 py-8 flex-1 w-full flex flex-col relative z-0">
+        
+        <!-- Alertas de Error -->
+        <div id="error-box" class="hidden mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 flex flex-col gap-2 backdrop-blur-sm">
+            <div class="flex items-start gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="shrink-0 mt-0.5"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                <p id="error-msg" class="text-sm font-medium leading-tight"></p>
+            </div>
+        </div>
+
+        <!-- Vista Inicial (Carga) -->
+        <div id="view-loading" class="flex-1 flex flex-col items-center justify-center py-20">
+            <div class="relative w-12 h-12 flex items-center justify-center">
+                <div class="absolute inset-0 border-4 border-white/10 rounded-full"></div>
+                <div class="absolute inset-0 border-4 border-rose-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+            <span class="mt-6 text-sm font-medium text-zinc-400 tracking-wider uppercase">Conectando...</span>
+        </div>
+
+        <!-- Vista LOBBY -->
+        <div id="view-lobby" class="hidden flex-1 flex flex-col justify-center gap-6">
+            
+            <div class="text-center mb-4">
+                <h2 class="text-3xl font-bold mb-2">Escucha <span class="text-gradient">juntos</span></h2>
+                <p class="text-sm text-zinc-400">Sincroniza música en tiempo real con amigos.</p>
+            </div>
+
+            <div class="glass rounded-3xl p-6 border border-white/5 shadow-2xl">
+                <label class="block text-xs font-semibold text-zinc-400 uppercase tracking-wider mb-2 ml-1">Tu Nombre</label>
+                <input type="text" id="input-username" placeholder="¿Cómo te llamas?" maxlength="15" class="w-full bg-black/40 border border-white/10 rounded-2xl px-5 py-4 text-lg font-medium focus:outline-none focus:border-rose-500 focus:ring-1 focus:ring-rose-500 transition-all mb-6 placeholder-zinc-600 text-white" />
+                
+                <div id="lobby-actions" class="opacity-50 pointer-events-none transition-opacity duration-300">
+                    <button id="btn-create" class="w-full py-4 px-4 bg-gradient-btn hover:shadow-lg hover:shadow-rose-500/25 text-white font-bold rounded-2xl transition-all flex justify-center items-center gap-2 mb-6">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M22 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                        Crear Nueva Sala
+                    </button>
+
+                    <div class="flex items-center gap-4 text-zinc-600 text-xs font-bold uppercase tracking-widest my-6">
+                        <div class="flex-1 h-px bg-white/10"></div> O <div class="flex-1 h-px bg-white/10"></div>
+                    </div>
+
+                    <div class="flex gap-2 bg-black/40 p-2 rounded-2xl border border-white/5 focus-within:border-white/20 transition-colors">
+                        <input type="text" id="input-code" placeholder="CÓDIGO" maxlength="5" class="flex-1 bg-transparent px-3 text-lg font-mono uppercase tracking-widest focus:outline-none text-center placeholder-zinc-600 text-white" />
+                        <button id="btn-join" class="px-6 py-3 bg-white text-black hover:bg-zinc-200 disabled:opacity-50 font-bold rounded-xl transition-all">Unirse</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Vista SALA -->
+        <div id="view-room" class="hidden space-y-6 pb-20">
+            
+            <!-- Room Info Card -->
+            <div class="glass p-5 rounded-3xl flex items-center justify-between relative overflow-hidden">
+                <div class="flex items-center gap-4 relative z-10">
+                    <div>
+                        <p class="text-[10px] font-bold text-zinc-500 uppercase tracking-widest mb-0.5">Código de Sala</p>
+                        <h2 id="display-code" class="text-2xl font-black font-mono tracking-widest text-gradient">---</h2>
+                    </div>
+                </div>
+                <div class="flex flex-col items-end gap-1.5 relative z-10 text-right">
+                    <div class="inline-flex items-center gap-2 text-[11px] font-semibold text-zinc-300">
+                        <span id="display-username" class="text-white"></span>
+                        <span id="status-dot" class="w-2 h-2 rounded-full bg-rose-500 animate-pulse shadow-[0_0_8px_rgba(244,63,94,0.8)]"></span>
+                    </div>
+                    <div id="host-badge" class="px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider transition-colors border">...</div>
+                </div>
+                <!-- BG decoration -->
+                <div class="absolute -right-10 -top-10 w-32 h-32 bg-white/5 rounded-full blur-2xl"></div>
+            </div>
+            
+            <button id="btn-claim-host" class="hidden w-full mt-2 px-4 py-3 bg-surface hover:bg-surface2 rounded-2xl text-xs font-bold text-zinc-300 transition-colors border border-white/5">
+                Tomar el Control (Host)
+            </button>
+
+            <div id="audio-section" class="transition-opacity duration-300 space-y-6">
+                
+                <!-- Reproductor Principal (Estilo Moderno) -->
+                <div id="player-box" class="glass rounded-3xl p-5 border border-white/10 shadow-2xl relative">
+                    <!-- Format Toggle (Subtle) -->
+                    <div class="absolute top-4 right-4 flex bg-black/50 rounded-lg p-0.5 border border-white/5 z-10">
+                        <button id="btn-format-mp3" class="px-2.5 py-1 text-[10px] font-bold rounded-md bg-white text-black transition-all shadow-sm">MP3</button>
+                        <button id="btn-format-mp4" class="px-2.5 py-1 text-[10px] font-bold rounded-md text-zinc-400 hover:text-white transition-all">MP4</button>
+                    </div>
+
+                    <!-- Video Container -->
+                    <div id="video-container" class="hidden w-full aspect-video bg-black rounded-2xl overflow-hidden mb-6 mt-6 relative shadow-inner">
+                        <video id="sync-media" playsinline class="w-full h-full object-contain"></video>
+                    </div>
+
+                    <!-- Artwork & Info -->
+                    <div class="flex flex-col items-center mt-2 mb-6" id="current-track-info">
+                        <div class="w-48 h-48 sm:w-56 sm:h-56 rounded-2xl bg-surface2 shadow-2xl overflow-hidden mb-6 relative group">
+                            <img id="current-track-thumb" src="" class="w-full h-full object-cover hidden transition-transform duration-700 group-hover:scale-105">
+                            <div id="current-track-placeholder" class="w-full h-full flex items-center justify-center bg-gradient-to-br from-surface to-dark">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" class="text-zinc-700"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+                            </div>
+                        </div>
+                        <div class="text-center w-full px-2">
+                            <h4 id="current-track-title" class="text-xl font-bold text-white truncate w-full">Nada reproduciendo</h4>
+                            <p id="current-track-user" class="text-sm text-zinc-400 mt-1 truncate">Añade algo a la cola</p>
+                        </div>
+                    </div>
+
+                    <!-- Progress Bar -->
+                    <div class="mb-6 px-2">
+                        <div class="relative w-full h-4 flex items-center slider-container">
+                            <div class="track-bg"></div>
+                            <div id="audio-buffer" class="buffer-fill w-0"></div>
+                            <div id="audio-progress" class="progress-fill w-0"></div>
+                            <input type="range" id="audio-seek" min="0" max="100" value="0" step="0.1" class="absolute w-full top-1/2 -translate-y-1/2 m-0 thumb-visible" />
+                        </div>
+                        <div class="flex justify-between mt-2 text-[11px] font-medium text-zinc-500 font-mono tracking-wider px-1">
+                            <span id="time-current">0:00</span>
+                            <span id="time-total">0:00</span>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="flex items-center justify-center gap-6 mb-2">
+                        <button class="w-10 h-10 flex items-center justify-center text-zinc-500 hover:text-white transition-colors" disabled>
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
+                        </button>
+                        
+                        <button id="btn-play-pause" class="w-16 h-16 flex-shrink-0 flex items-center justify-center rounded-full bg-white text-black hover:scale-105 transition-all shadow-[0_0_20px_rgba(255,255,255,0.2)] disabled:opacity-50 disabled:bg-surface2 disabled:text-zinc-600 disabled:shadow-none disabled:cursor-not-allowed disabled:hover:scale-100">
+                            <svg id="icon-play" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor" class="ml-1"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                            <svg id="icon-pause" class="hidden" xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect></svg>
+                        </button>
+                        
+                        <button id="btn-skip" class="w-10 h-10 flex items-center justify-center text-zinc-400 hover:text-white transition-all disabled:opacity-30 disabled:cursor-not-allowed hover:scale-110 disabled:hover:scale-100" title="Saltar Canción">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"></line></svg>
+                        </button>
+                    </div>
+                    
+                    <div class="text-center flex flex-col items-center mt-4 text-[10px] text-zinc-500 font-mono tracking-widest uppercase h-4" id="stream-status">Esperando...</div>
+                </div>
+
+                <!-- Cola de Reproducción -->
+                <div id="queue-box" class="space-y-3 pt-2">
+                    <div class="flex justify-between items-center px-2">
+                        <h3 class="text-sm font-bold text-white">Siguiente</h3>
+                        <span class="text-xs font-medium text-zinc-500 bg-surface px-2 py-1 rounded-md" id="queue-count">0</span>
+                    </div>
+                    <ul id="queue-list" class="space-y-2">
+                        <!-- Items de la cola -->
+                        <li class="p-5 text-center text-sm font-medium text-zinc-600 bg-white/5 border border-white/5 rounded-2xl border-dashed">
+                            La cola está vacía
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Buscador (Sticky at bottom for easier access on mobile) -->
+                <div id="upload-box" class="pt-4 border-t border-white/10 mt-6">
+                    <h3 class="text-sm font-bold text-white mb-3 px-2">Añadir Música</h3>
+                    <div id="content-yt" class="relative">
+                        <div class="flex gap-2">
+                            <input type="text" id="yt-search-input" placeholder="Buscar canción, artista..." class="flex-1 bg-surface2 border border-white/10 rounded-2xl px-5 py-3.5 text-sm focus:outline-none focus:border-rose-500 transition-colors text-white placeholder-zinc-500 shadow-inner" />
+                            <button id="yt-search-btn" class="px-5 bg-gradient-btn text-white font-bold rounded-2xl transition-all shadow-lg text-sm flex items-center justify-center">
+                                Buscar
+                            </button>
+                        </div>
+                        <div id="yt-loader" class="hidden py-8">
+                            <div class="w-6 h-6 border-2 border-white/20 border-t-rose-500 rounded-full animate-spin mx-auto"></div>
+                        </div>
+                        <div id="yt-results" class="flex flex-col gap-2 mt-3 max-h-[350px] overflow-y-auto pr-1 text-left pb-4">
+                            <!-- Resultados -->
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, getDoc, onSnapshot, updateDoc, deleteField, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // ==========================================
+        // PWA SETUP (Service Worker & Manifest)
+        // ==========================================
+        const setupPWA = () => {
+            // 1. Dynamic Manifest Injection (to keep it strictly single file)
+            const manifestData = {
+                name: "MuSync",
+                short_name: "MuSync",
+                start_url: "./",
+                display: "standalone",
+                background_color: "#030305",
+                theme_color: "#f43f5e",
+                description: "Escucha música sincronizada con amigos",
+                icons: [
+                    {
+                        src: "data:image/svg+xml;charset=utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='112' fill='%23030305'/%3E%3Cpath fill='url(%23a)' d='M180 140l190 116-190 116z'/%3E%3Cdefs%3E%3ClinearGradient id='a' x1='180' y1='140' x2='370' y2='256' gradientUnits='userSpaceOnUse'%3E%3Cstop stop-color='%23f43f5e'/%3E%3Cstop offset='1' stop-color='%23a855f7'/%3E%3C/linearGradient%3E%3C/defs%3E%3C/svg%3E",
+                        sizes: "512x512",
+                        type: "image/svg+xml",
+                        purpose: "any maskable"
+                    }
+                ]
+            };
+            const stringManifest = JSON.stringify(manifestData);
+            const blob = new Blob([stringManifest], {type: 'application/json'});
+            const manifestURL = URL.createObjectURL(blob);
+            document.getElementById('manifest-link').setAttribute('href', manifestURL);
+
+            // 2. Inline Service Worker Registration
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    self.addEventListener('install', (e) => self.skipWaiting());
+                    self.addEventListener('activate', (e) => self.clients.claim());
+                    self.addEventListener('fetch', (e) => {
+                        // Basic pass-through to satisfy PWA installability requirements
+                        e.respondWith(fetch(e.request).catch(() => new Response('Offline')));
+                    });
+                `;
+                const swBlob = new Blob([swCode], {type: 'application/javascript'});
+                const swUrl = URL.createObjectURL(swBlob);
+                navigator.serviceWorker.register(swUrl).catch(err => console.log('SW Reg Failed', err));
+            }
+
+            // 3. Install Prompt Handling
+            let deferredPrompt;
+            window.addEventListener('beforeinstallprompt', (e) => {
+                e.preventDefault();
+                deferredPrompt = e;
+                document.getElementById('btn-install-pwa').classList.remove('hidden');
+            });
+            document.getElementById('btn-install-pwa').addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    if (outcome === 'accepted') {
+                        document.getElementById('btn-install-pwa').classList.add('hidden');
+                    }
+                    deferredPrompt = null;
+                }
+            });
+        };
+        setupPWA();
+
+
+        // ==========================================
+        // CONFIGURACIÓN API & FIREBASE (Intacto)
+        // ==========================================
+        const FASTAPI_BASE_URL = "https://ytmp.arielcapdevila.com"; 
+        
+        const firebaseConfig = {
+            apiKey: "AIzaSyCbtM1NYEDTUH-lLqFNPtjieOywOJOKd9Y",
+            authDomain: "chatly-e9d2f.firebaseapp.com",
+            projectId: "chatly-e9d2f",
+            storageBucket: "chatly-e9d2f.firebasestorage.app",
+            messagingSenderId: "260226072140",
+            appId: "1:260226072140:web:45556092cd0a650b04fee9",
+            measurementId: "G-428QT3LF8W"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : firebaseConfig.appId;
+
+        // --- ESTADO GLOBAl ---
+        let currentUser = null;
+        let currentRoomCode = null;
+        let unsubscribeRoom = null;
+        let currentAudioMeta = null;
+        
+        // Estado Usuario y Preferencias (Migrando nombre anterior si existe)
+        let username = localStorage.getItem('musync_username') || localStorage.getItem('audiosync_username') || '';
+        let localMediaFormat = 'mp3'; 
+        let useBetaStream = localStorage.getItem('useBetaStream') === 'true';
+        let isHost = false; 
+        
+        // Estado Sincronización
+        let isApplyingRemoteEvent = false;
+        let lastEventTimestamp = 0;
+        let isMediaDownloaded = false;
+        let pendingEvent = null;
+        let isDraggingSlider = false;
+        let roomDataCache = null; 
+        let hasTriggeredAutoPlay = false; 
+
+        // --- REFERENCIAS DOM ---
+        const inputUsername = document.getElementById('input-username');
+        const lobbyActions = document.getElementById('lobby-actions');
+        const displayUsername = document.getElementById('display-username');
+        
+        const vLoading = document.getElementById('view-loading');
+        const vLobby = document.getElementById('view-lobby');
+        const vRoom = document.getElementById('view-room');
+        const errBox = document.getElementById('error-box');
+        const errMsg = document.getElementById('error-msg');
+        
+        const statusDot = document.getElementById('status-dot');
+        const hostBadge = document.getElementById('host-badge');
+        const btnClaimHost = document.getElementById('btn-claim-host');
+        
+        const mediaEl = document.getElementById('sync-media');
+        const videoContainer = document.getElementById('video-container');
+        const btnPlayPause = document.getElementById('btn-play-pause');
+        const btnSkip = document.getElementById('btn-skip');
+        const streamStatus = document.getElementById('stream-status');
+        const timeTotal = document.getElementById('time-total');
+        const seekInput = document.getElementById('audio-seek');
+        const timeCurrent = document.getElementById('time-current');
+        const progressFill = document.getElementById('audio-progress');
+        
+        const trackTitle = document.getElementById('current-track-title');
+        const trackUser = document.getElementById('current-track-user');
+        const trackThumb = document.getElementById('current-track-thumb');
+        const trackPlaceholder = document.getElementById('current-track-placeholder');
+
+        const queueList = document.getElementById('queue-list');
+        const queueCount = document.getElementById('queue-count');
+        
+        const ytSearchInput = document.getElementById('yt-search-input');
+        const ytSearchBtn = document.getElementById('yt-search-btn');
+        const ytResultsContainer = document.getElementById('yt-results');
+        const ytLoader = document.getElementById('yt-loader');
+
+        // Modal de Ajustes
+        const settingsModal = document.getElementById('settings-modal');
+        const btnSettings = document.getElementById('btn-settings');
+        const btnCloseSettings = document.getElementById('btn-close-settings');
+        const btnToggleBeta = document.getElementById('btn-toggle-beta');
+        const toggleKnob = document.getElementById('toggle-knob');
+
+        // --- UTILIDADES ---
+        const formatTime = (sec) => {
+            if (typeof sec !== 'number' || isNaN(sec) || !isFinite(sec) || sec < 0) return "0:00";
+            const m = Math.floor(sec / 60); const s = Math.floor(sec % 60);
+            return `${m}:${s < 10 ? '0' : ''}${s}`;
+        };
+
+        const showError = (msg) => {
+            if (!msg) {
+                errBox.classList.add('hidden');
+            } else { 
+                errMsg.textContent = msg; 
+                errBox.classList.remove('hidden'); 
+            }
+        };
+
+        const extractVideoId = (url) => {
+            const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i);
+            return match ? match[1] : null;
+        };
+
+        // --- GESTIÓN DE USUARIO ---
+        if (username) {
+            inputUsername.value = username;
+            lobbyActions.classList.remove('opacity-50', 'pointer-events-none');
+        }
+
+        inputUsername.addEventListener('input', (e) => {
+            username = e.target.value.trim();
+            if (username.length > 1) {
+                localStorage.setItem('musync_username', username);
+                lobbyActions.classList.remove('opacity-50', 'pointer-events-none');
+            } else {
+                lobbyActions.classList.add('opacity-50', 'pointer-events-none');
+            }
+        });
+
+        // --- AJUSTES Y FORMATO ---
+        const updateBetaToggleUI = () => {
+            if (useBetaStream) {
+                btnToggleBeta.classList.replace('bg-surface2', 'bg-rose-500');
+                btnToggleBeta.classList.replace('border-white/10', 'border-rose-400');
+                toggleKnob.classList.add('translate-x-6');
+            } else {
+                btnToggleBeta.classList.replace('bg-rose-500', 'bg-surface2');
+                btnToggleBeta.classList.replace('border-rose-400', 'border-white/10');
+                toggleKnob.classList.remove('translate-x-6');
+            }
+        };
+        updateBetaToggleUI();
+
+        btnSettings.addEventListener('click', () => settingsModal.classList.remove('hidden'));
+        btnCloseSettings.addEventListener('click', () => settingsModal.classList.add('hidden'));
+        settingsModal.addEventListener('click', (e) => { if (e.target === settingsModal) settingsModal.classList.add('hidden'); });
+
+        btnToggleBeta.addEventListener('click', () => {
+            useBetaStream = !useBetaStream;
+            localStorage.setItem('useBetaStream', useBetaStream.toString());
+            updateBetaToggleUI();
+            if (currentAudioMeta) downloadAndPrepare(currentAudioMeta); 
+        });
+
+        const updateFormatUI = () => {
+            if (localMediaFormat === 'mp3') {
+                document.getElementById('btn-format-mp3').className = "px-2.5 py-1 text-[10px] font-bold rounded-md bg-white text-black transition-all shadow-sm";
+                document.getElementById('btn-format-mp4').className = "px-2.5 py-1 text-[10px] font-bold rounded-md text-zinc-400 hover:text-white transition-all";
+                videoContainer.classList.add('hidden');
+            } else {
+                document.getElementById('btn-format-mp4').className = "px-2.5 py-1 text-[10px] font-bold rounded-md bg-white text-black transition-all shadow-sm";
+                document.getElementById('btn-format-mp3').className = "px-2.5 py-1 text-[10px] font-bold rounded-md text-zinc-400 hover:text-white transition-all";
+                videoContainer.classList.remove('hidden');
+            }
+        };
+
+        document.getElementById('btn-format-mp3').addEventListener('click', () => {
+            if (localMediaFormat === 'mp3') return;
+            localMediaFormat = 'mp3'; updateFormatUI();
+            if (currentAudioMeta) downloadAndPrepare(currentAudioMeta);
+        });
+
+        document.getElementById('btn-format-mp4').addEventListener('click', () => {
+            if (localMediaFormat === 'mp4') return;
+            localMediaFormat = 'mp4'; updateFormatUI();
+            if (currentAudioMeta) downloadAndPrepare(currentAudioMeta);
+        });
+
+        // --- ROLES (CONTROLES DE REPRODUCCIÓN) ---
+        const updateRoleUI = () => {
+            if (isHost) {
+                hostBadge.textContent = "HOST";
+                hostBadge.className = "px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider transition-colors bg-gradient-btn text-white border-none";
+                btnClaimHost.classList.add('hidden');
+                
+                btnSkip.disabled = false;
+                if (isMediaDownloaded) {
+                    btnPlayPause.style.pointerEvents = 'auto';
+                    btnPlayPause.disabled = false;
+                    seekInput.style.pointerEvents = 'auto';
+                    seekInput.disabled = false;
+                }
+            } else {
+                hostBadge.textContent = "INVITADO";
+                hostBadge.className = "px-2.5 py-0.5 rounded-full text-[9px] font-bold tracking-wider transition-colors bg-surface2 text-zinc-400 border border-white/5";
+                btnClaimHost.classList.remove('hidden');
+                
+                btnSkip.disabled = true;
+                btnPlayPause.style.pointerEvents = 'none';
+                btnPlayPause.disabled = true;
+                seekInput.style.pointerEvents = 'none';
+                seekInput.disabled = true;
+            }
+        };
+
+        btnClaimHost.addEventListener('click', async () => {
+            if (!currentRoomCode || !currentUser) return;
+            try {
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode), {
+                    hostId: currentUser.uid
+                });
+            } catch (err) {}
+        });
+
+        // --- DESBLOQUEO DE MEDIA MÓVIL ---
+        let mediaUnlocked = false;
+        const unlockMediaGlobal = () => {
+            if (mediaUnlocked) return;
+            if (!mediaEl.src || mediaEl.src === window.location.href) {
+                mediaEl.src = "data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU5LjI3LjEwMAAAAAAAAAAAAAAA//OEwAAAAANIAAAAAExBTUUzLjEwMKqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq";
+            }
+            const p = mediaEl.play();
+            if (p !== undefined) {
+                p.then(() => {
+                    if(mediaEl.src.startsWith('data:')) mediaEl.pause();
+                    mediaUnlocked = true;
+                }).catch(() => {});
+            }
+        };
+        document.addEventListener('click', unlockMediaGlobal, { once: true });
+        document.addEventListener('touchstart', unlockMediaGlobal, { once: true });
+
+        // --- AUTH ---
+        const initAuth = async () => {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    try { await signInWithCustomToken(auth, __initial_auth_token); } 
+                    catch (e) { await signInAnonymously(auth); }
+                } else await signInAnonymously(auth);
+            } catch (error) { showError("Error Auth: " + error.message); }
+        };
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) { vLoading.classList.add('hidden'); vLobby.classList.remove('hidden'); }
+        });
+        initAuth();
+
+        // ==========================================
+        // LÓGICA DE COLA (QUEUE) Y REPRODUCCIÓN
+        // ==========================================
+        const renderQueue = (queueArray) => {
+            queueList.innerHTML = '';
+            queueCount.textContent = `${queueArray ? queueArray.length : 0}`;
+            
+            if (!queueArray || queueArray.length === 0) {
+                queueList.innerHTML = '<li class="p-5 text-center text-sm font-medium text-zinc-500 bg-white/5 border border-white/5 rounded-2xl border-dashed">La cola está vacía. Añade algo nuevo.</li>';
+                return;
+            }
+
+            queueArray.forEach(item => {
+                const li = document.createElement('li');
+                li.className = "flex items-center gap-3 bg-surface2/50 hover:bg-surface2 p-2.5 rounded-2xl border border-white/5 transition-colors group";
+                
+                let thumbHtml = item.thumbnail ? `<img src="${item.thumbnail}" class="w-14 h-14 object-cover rounded-xl shadow-md shrink-0">` : `<div class="w-14 h-14 bg-surface rounded-xl shrink-0"></div>`;
+                
+                li.innerHTML = `
+                    ${thumbHtml}
+                    <div class="flex-1 overflow-hidden pointer-events-none">
+                        <p class="text-sm font-bold text-zinc-100 truncate w-full">${item.name}</p>
+                        <p class="text-[11px] text-zinc-500 truncate w-full mt-0.5">De <span class="text-zinc-300">${item.addedByName}</span></p>
+                    </div>
+                `;
+
+                // Botón de eliminar
+                if (item.addedByUid === currentUser.uid || isHost) {
+                    const btnDel = document.createElement('button');
+                    btnDel.className = "p-2.5 text-zinc-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all shrink-0 opacity-100 sm:opacity-0 sm:group-hover:opacity-100";
+                    btnDel.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>`;
+                    btnDel.onclick = () => removeFromQueue(item.id);
+                    li.appendChild(btnDel);
+                }
+
+                queueList.appendChild(li);
+            });
+        };
+
+        const removeFromQueue = async (trackId) => {
+            if (!currentRoomCode || !roomDataCache) return;
+            try {
+                const newQueue = (roomDataCache.queue || []).filter(item => item.id !== trackId);
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode), {
+                    queue: newQueue
+                });
+            } catch(e) { showError("Error borrando de la cola"); }
+        };
+
+        const advanceQueue = async () => {
+            if (!isHost || !currentRoomCode || !roomDataCache) return;
+            
+            try {
+                const queue = roomDataCache.queue || [];
+                if (queue.length > 0) {
+                    const nextTrack = queue[0];
+                    const newQueue = queue.slice(1);
+                    
+                    const partsUpdate = {};
+                    Object.keys(roomDataCache.participants || {}).forEach(uid => {
+                        partsUpdate[`participants.${uid}.readyTrackId`] = null;
+                    });
+
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode), {
+                        currentTrack: nextTrack,
+                        queue: newQueue,
+                        eventInfo: { type: 'PAUSE', time: 0, senderId: currentUser.uid, timestamp: Date.now() },
+                        ...partsUpdate
+                    });
+                } else {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode), {
+                        currentTrack: null,
+                        eventInfo: null
+                    });
+                }
+            } catch(e) { console.error("Error avanzando cola", e); }
+        };
+
+        btnSkip.addEventListener('click', () => {
+            if (isHost) advanceQueue();
+        });
+
+        mediaEl.addEventListener('ended', () => {
+            if (isHost) {
+                streamStatus.textContent = "Finalizado. Siguiente...";
+                advanceQueue();
+            }
+        });
+
+        // ==========================================
+        // FETCH INDIVIDUAL Y CACHÉ
+        // ==========================================
+        const showForcePlayButton = () => {
+            streamStatus.innerHTML = '<button id="btn-force-play" class="bg-rose-600 text-white px-4 py-1.5 rounded-full text-[10px] font-bold animate-pulse mt-1 shadow-lg shadow-rose-500/30">▶ Toca para Sincronizar</button>';
+            document.getElementById('btn-force-play').onclick = () => {
+                mediaEl.play().then(() => { streamStatus.textContent = "Reproduciendo"; }).catch(e => {});
+            };
+        };
+
+        const downloadAndPrepare = async (metaData) => {
+            isMediaDownloaded = false;
+            hasTriggeredAutoPlay = false; 
+            
+            btnPlayPause.style.pointerEvents = 'none';
+            btnPlayPause.disabled = true;
+            seekInput.style.pointerEvents = 'none';
+            seekInput.disabled = true;
+
+            try {
+                if (useBetaStream) {
+                    streamStatus.textContent = `Conectando (${localMediaFormat.toUpperCase()})...`;
+                    const typeParam = localMediaFormat === 'mp4' ? 'video' : 'audio';
+                    const reqUrl = `${FASTAPI_BASE_URL}/api/stream?url=${encodeURIComponent(metaData.originalUrl)}&type=${typeParam}`;
+                    
+                    const res = await fetch(reqUrl);
+                    if (!res.ok) throw new Error("Net Err");
+                    const data = await res.json();
+                    if (!data.url) throw new Error("No URL");
+                    
+                    mediaEl.src = data.url;
+                    mediaEl.load();
+                } else {
+                    streamStatus.textContent = `Descargando en caché...`;
+                    const reqUrl = `${FASTAPI_BASE_URL}/api/download?url=${encodeURIComponent(metaData.originalUrl)}&format=${localMediaFormat}`;
+                    const cache = await caches.open('musync-media-cache');
+                    
+                    let res = await cache.match(reqUrl);
+                    if (!res) {
+                        res = await fetch(reqUrl);
+                        if (!res.ok) throw new Error("Download Err");
+                        await cache.put(reqUrl, res.clone());
+                    }
+
+                    const blob = await res.blob();
+                    mediaEl.src = URL.createObjectURL(blob);
+                    mediaEl.load();
+                }
+                
+                isMediaDownloaded = true;
+
+                if (currentRoomCode && currentUser) {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode), {
+                        [`participants.${currentUser.uid}.readyTrackId`]: metaData.id
+                    });
+                }
+
+                if (isHost) {
+                    streamStatus.textContent = "Esperando a la sala...";
+                    btnPlayPause.style.pointerEvents = 'auto';
+                    btnPlayPause.disabled = false;
+                    seekInput.style.pointerEvents = 'auto';
+                    seekInput.disabled = false;
+                } else {
+                    streamStatus.textContent = "Listo. Esperando Host...";
+                }
+
+                if (!isHost && pendingEvent) {
+                    applyRemoteEvent(pendingEvent);
+                    pendingEvent = null;
+                }
+
+            } catch (err) {
+                streamStatus.textContent = "Error al descargar.";
+            }
+        };
+
+        const applyRemoteEvent = (event) => {
+            if (!isMediaDownloaded || !mediaEl.src) return; 
+
+            if (event.timestamp <= lastEventTimestamp) return;
+            lastEventTimestamp = event.timestamp;
+            isApplyingRemoteEvent = true;
+
+            if (event.type === 'PLAY') {
+                const elapsed = (Date.now() - event.timestamp) / 1000;
+                let expectedTime = event.time + elapsed;
+                if (isNaN(expectedTime) || expectedTime < 0) expectedTime = 0;
+                
+                if (Math.abs(mediaEl.currentTime - expectedTime) > 1.5) {
+                    mediaEl.currentTime = expectedTime;
+                }
+                if (mediaEl.paused) {
+                    const p = mediaEl.play();
+                    if (p !== undefined) p.catch((e)=>{ showForcePlayButton(); });
+                }
+            } else if (event.type === 'PAUSE') {
+                if (!mediaEl.paused) mediaEl.pause();
+                if (Math.abs(mediaEl.currentTime - event.time) > 0.5 && !isNaN(event.time)) {
+                    mediaEl.currentTime = event.time;
+                }
+            } else if (event.type === 'SEEK') {
+                if (!isNaN(event.time) && event.time >= 0) {
+                    mediaEl.currentTime = event.time;
+                }
+            }
+            
+            setTimeout(() => { isApplyingRemoteEvent = false; }, 200);
+        };
+
+        // ==========================================
+        // BÚSQUEDA Y AÑADIR A LA COLA
+        // ==========================================
+        ytSearchBtn.addEventListener('click', async () => {
+            showError(null);
+            const query = ytSearchInput.value.trim();
+            if (!query) return;
+
+            ytResultsContainer.innerHTML = '';
+            ytLoader.classList.remove('hidden');
+
+            try {
+                const res = await fetch(`${FASTAPI_BASE_URL}/api/search?query=${encodeURIComponent(query)}&limit=8`);
+                if (!res.ok) throw new Error("Error en la conexión a la API");
+                const data = await res.json();
+                
+                const results = data.results || data;
+                ytLoader.classList.add('hidden');
+                
+                if (Array.isArray(results) && results.length > 0) {
+                    results.forEach(item => {
+                        const titleRaw = item.title || item.url || "Audio YT";
+                        const videoId = item.id || extractVideoId(item.url || "");
+                        let thumbUrl = item.thumbnail || (videoId ? `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg` : '');
+                        
+                        if (['everywhere', 'eat', 'time'].some(w => titleRaw.toLowerCase().includes(w))) {
+                            thumbUrl = 'https://greenbase.arielcapdevila.com/file/f5571e2f-b9d7-4457-810a-106def057b18.jpg';
+                        }
+
+                        const btn = document.createElement('button');
+                        btn.className = "text-left p-2.5 bg-surface2 hover:bg-surface border border-white/5 hover:border-white/20 rounded-2xl text-sm w-full transition-all overflow-hidden flex items-center gap-4 group";
+                        btn.innerHTML = `
+                            <div class="relative w-14 h-14 shrink-0">
+                                <img src="${thumbUrl}" class="w-full h-full object-cover rounded-xl bg-surface">
+                                <div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-xl">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                                </div>
+                            </div>
+                            <div class="flex flex-col overflow-hidden w-full">
+                                <span class="truncate font-bold text-zinc-100">${titleRaw}</span>
+                                <span class="text-[11px] text-zinc-500 font-medium mt-0.5">Toca para añadir</span>
+                            </div>
+                        `;
+                        
+                        btn.addEventListener('click', () => {
+                            addToQueue(item.url || item.id, titleRaw, item.duration || 0, thumbUrl);
+                        });
+                        
+                        ytResultsContainer.appendChild(btn);
+                    });
+                } else {
+                    ytResultsContainer.innerHTML = '<p class="text-sm text-zinc-500 text-center py-4 font-medium">No se encontraron resultados.</p>';
+                }
+            } catch (err) {
+                ytLoader.classList.add('hidden');
+                showError("No se pudo buscar: " + err.message);
+            }
+        });
+
+        ytSearchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') ytSearchBtn.click();
+        });
+
+        async function addToQueue(url, title, duration, thumbnail) {
+            showError(null);
+            
+            if (!url || !currentRoomCode || !roomDataCache || !currentUser) {
+                showError("Error: Faltan datos para añadir a la cola.");
+                return;
+            }
+            
+            const queue = roomDataCache.queue || [];
+            
+            const mySongs = queue.filter(q => q.addedByUid === currentUser.uid).length;
+            if (mySongs >= 2) {
+                showError("Límite alcanzado: Ya tienes 2 canciones en cola.");
+                setTimeout(() => showError(null), 4000);
+                return;
+            }
+
+            const newItem = {
+                id: Date.now().toString() + Math.random().toString(36).substring(2,5),
+                type: 'youtube',
+                name: String(title || 'Audio'),
+                originalUrl: String(url || ''),
+                duration: Number(duration || 0),
+                thumbnail: String(thumbnail || ''),
+                addedByUid: String(currentUser.uid || ''),
+                addedByName: String(username || 'Anónimo')
+            };
+
+            try {
+                if (!roomDataCache.currentTrack) {
+                    const partsUpdate = {};
+                    Object.keys(roomDataCache.participants || {}).forEach(uid => { 
+                        partsUpdate[`participants.${uid}.readyTrackId`] = null; 
+                    });
+
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode), {
+                        currentTrack: newItem,
+                        eventInfo: { type: 'PAUSE', time: 0, senderId: currentUser.uid, timestamp: Date.now() },
+                        ...partsUpdate
+                    });
+                } else {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode), {
+                        queue: arrayUnion(newItem)
+                    });
+                }
+                
+                ytSearchInput.value = '';
+                ytResultsContainer.innerHTML = '';
+                
+            } catch (e) { 
+                showError("Error al subir a base de datos: " + e.message); 
+            }
+        }
+
+        // ==========================================
+        // SINCRONIZACIÓN FIREBASE
+        // ==========================================
+        const listenToRoom = (code) => {
+            displayUsername.textContent = username || 'Anónimo';
+            
+            unsubscribeRoom = onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code), (snap) => {
+                if (!snap.exists()) return leaveRoom();
+                const data = snap.data();
+                roomDataCache = data; 
+
+                // 1. Roles
+                if (data.hostId) {
+                    const wasHost = isHost;
+                    isHost = (data.hostId === currentUser.uid);
+                    if (wasHost !== isHost) updateRoleUI(); 
+                }
+
+                // 2. Render de Cola
+                renderQueue(data.queue);
+
+                // 3. Current Track
+                if (!data.currentTrack) {
+                    currentAudioMeta = null;
+                    mediaEl.pause();
+                    mediaEl.src = '';
+                    trackTitle.textContent = "Nada reproduciendo";
+                    trackUser.textContent = "Añade algo a la cola";
+                    trackThumb.classList.add('hidden');
+                    trackPlaceholder.classList.remove('hidden');
+                    timeTotal.textContent = "0:00";
+                    streamStatus.textContent = "Esperando canciones...";
+                } 
+                else if (!currentAudioMeta || currentAudioMeta.id !== data.currentTrack.id) {
+                    currentAudioMeta = data.currentTrack;
+                    
+                    trackTitle.textContent = currentAudioMeta.name;
+                    trackUser.textContent = `Puesto por ${currentAudioMeta.addedByName}`;
+                    if (currentAudioMeta.thumbnail) {
+                        trackThumb.src = currentAudioMeta.thumbnail;
+                        trackThumb.classList.remove('hidden');
+                        trackPlaceholder.classList.add('hidden');
+                    }
+                    if (currentAudioMeta.duration > 0) timeTotal.textContent = formatTime(currentAudioMeta.duration);
+                    
+                    downloadAndPrepare(currentAudioMeta);
+                }
+
+                // 4. Auto-Play Sincronizado para el NUEVO ITEM
+                if (isHost && data.currentTrack && data.participants) {
+                    const participantsUids = Object.keys(data.participants);
+                    const pCount = participantsUids.length;
+                    
+                    let readyCount = 0;
+                    participantsUids.forEach(uid => {
+                        if (data.participants[uid].readyTrackId === data.currentTrack.id) readyCount++;
+                    });
+                    
+                    if (readyCount >= pCount && !hasTriggeredAutoPlay && isMediaDownloaded) {
+                        hasTriggeredAutoPlay = true; 
+                        streamStatus.textContent = "¡Todos listos! Reproduciendo...";
+                        mediaEl.play().catch(()=>{});
+                        sendSyncEvent('PLAY', 0);
+                    }
+                }
+
+                // 5. Eventos remotos
+                if (!isHost && data.eventInfo && data.eventInfo.senderId !== currentUser.uid) {
+                    if (isMediaDownloaded) applyRemoteEvent(data.eventInfo);
+                    else pendingEvent = data.eventInfo;
+                }
+            });
+        };
+
+        const sendSyncEvent = async (type, time) => {
+            if (!currentRoomCode || !currentUser || !isHost) return;
+            try {
+                const timestamp = Date.now();
+                lastEventTimestamp = timestamp; 
+                await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode), {
+                    eventInfo: { type, time, senderId: currentUser.uid, timestamp: timestamp }
+                });
+            } catch (err) {}
+        };
+
+        // --- EVENTOS NATIVOS DE MEDIA ---
+        mediaEl.addEventListener('playing', () => {
+            document.getElementById('icon-play').classList.add('hidden');
+            document.getElementById('icon-pause').classList.remove('hidden');
+            streamStatus.textContent = "REPRODUCIENDO";
+        });
+
+        mediaEl.addEventListener('pause', () => {
+            document.getElementById('icon-pause').classList.add('hidden');
+            document.getElementById('icon-play').classList.remove('hidden');
+            if (mediaEl.readyState >= 3 && !mediaEl.ended) streamStatus.textContent = "PAUSADO";
+        });
+
+        btnPlayPause.addEventListener('click', () => {
+            if (!isHost || !currentAudioMeta || !isMediaDownloaded) return;
+            if (mediaEl.paused) { 
+                mediaEl.play().catch(()=>{}); 
+                sendSyncEvent('PLAY', mediaEl.currentTime);
+            } else { 
+                mediaEl.pause(); 
+                sendSyncEvent('PAUSE', mediaEl.currentTime);
+            }
+        });
+
+        mediaEl.addEventListener('loadedmetadata', () => {
+            if (currentAudioMeta && (!currentAudioMeta.duration || currentAudioMeta.duration === 0) && mediaEl.duration !== Infinity && !isNaN(mediaEl.duration)) {
+                currentAudioMeta.duration = mediaEl.duration;
+                timeTotal.textContent = formatTime(mediaEl.duration);
+            }
+        });
+
+        seekInput.addEventListener('mousedown', () => { if (isHost) isDraggingSlider = true; });
+        seekInput.addEventListener('touchstart', () => { if (isHost) isDraggingSlider = true; }, {passive: true});
+        seekInput.addEventListener('mouseup', () => { if (isHost) isDraggingSlider = false; });
+        seekInput.addEventListener('touchend', () => { if (isHost) isDraggingSlider = false; });
+
+        seekInput.addEventListener('change', (e) => {
+            if (!isHost || !isMediaDownloaded) return;
+            isDraggingSlider = false;
+            const d = (currentAudioMeta && currentAudioMeta.duration) ? currentAudioMeta.duration : (mediaEl.duration || 1);
+            const target = (e.target.value / 100) * d;
+            if(!isNaN(target)) {
+                mediaEl.currentTime = target;
+                sendSyncEvent('SEEK', target);
+            }
+        });
+
+        seekInput.addEventListener('input', (e) => {
+            if (!isHost) return;
+            const d = (currentAudioMeta && currentAudioMeta.duration) ? currentAudioMeta.duration : (mediaEl.duration || 1);
+            const time = (e.target.value / 100) * d;
+            progressFill.style.width = `${e.target.value}%`;
+            timeCurrent.textContent = formatTime(time);
+        });
+
+        mediaEl.addEventListener('timeupdate', () => {
+            const d = (currentAudioMeta && currentAudioMeta.duration) ? currentAudioMeta.duration : mediaEl.duration;
+            if (!d || d === Infinity || isNaN(d)) return;
+            
+            if (!isDraggingSlider) {
+                seekInput.value = (mediaEl.currentTime / d) * 100;
+                progressFill.style.width = `${seekInput.value}%`;
+                timeCurrent.textContent = formatTime(mediaEl.currentTime);
+            }
+
+            if (mediaEl.buffered.length > 0) {
+                const end = mediaEl.buffered.end(mediaEl.buffered.length - 1);
+                document.getElementById('audio-buffer').style.width = `${(end / d) * 100}%`;
+            }
+        });
+
+        // --- SALAS ---
+        document.getElementById('btn-create').addEventListener('click', async () => {
+            if (!currentUser || !username) {
+                inputUsername.classList.add('border-rose-500');
+                setTimeout(() => inputUsername.classList.remove('border-rose-500'), 1000);
+                return;
+            }
+            const code = Math.random().toString(36).substring(2, 7).toUpperCase();
+            document.getElementById('display-code').textContent = code;
+            
+            await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code), { 
+                hostId: currentUser.uid, 
+                participants: { [currentUser.uid]: { username, readyTrackId: null } },
+                createdAt: Date.now(), 
+                currentTrack: null,
+                queue: [],
+                eventInfo: null 
+            });
+            
+            currentRoomCode = code;
+            isHost = true;
+            updateRoleUI();
+            
+            vLobby.classList.add('hidden'); vRoom.classList.remove('hidden'); document.getElementById('btn-leave').classList.remove('hidden');
+            listenToRoom(code);
+        });
+
+        document.getElementById('btn-join').addEventListener('click', async () => {
+            if (!currentUser || !username) {
+                inputUsername.classList.add('border-rose-500');
+                setTimeout(() => inputUsername.classList.remove('border-rose-500'), 1000);
+                return;
+            }
+            const code = document.getElementById('input-code').value.toUpperCase();
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'rooms', code);
+            const snap = await getDoc(roomRef);
+            
+            if (snap.exists()) {
+                currentRoomCode = code; 
+                document.getElementById('display-code').textContent = code;
+                
+                await updateDoc(roomRef, {
+                    [`participants.${currentUser.uid}`]: { username, readyTrackId: null }
+                });
+
+                isHost = false;
+                updateRoleUI();
+                
+                vLobby.classList.add('hidden'); vRoom.classList.remove('hidden'); document.getElementById('btn-leave').classList.remove('hidden');
+                listenToRoom(code);
+            } else {
+                showError("Código de sala no válido.");
+            }
+        });
+
+        const leaveRoom = async () => {
+            if (currentRoomCode && currentUser) {
+                try {
+                    await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'rooms', currentRoomCode), {
+                        [`participants.${currentUser.uid}`]: deleteField()
+                    });
+                } catch(e) {}
+            }
+
+            if (unsubscribeRoom) unsubscribeRoom();
+            currentRoomCode = null; roomDataCache = null;
+            mediaEl.pause(); mediaEl.src = '';
+            vRoom.classList.add('hidden'); document.getElementById('btn-leave').classList.add('hidden'); vLobby.classList.remove('hidden');
+            
+            trackTitle.textContent = "Nada reproduciendo";
+            trackUser.textContent = "Añade algo a la cola";
+            trackThumb.classList.add('hidden');
+            trackPlaceholder.classList.remove('hidden');
+            timeTotal.textContent = "0:00";
+            streamStatus.textContent = "Esperando...";
+        };
+        document.getElementById('btn-leave').addEventListener('click', leaveRoom);
+        window.addEventListener('beforeunload', leaveRoom); 
+
+    </script>
+</body>
+</html>
