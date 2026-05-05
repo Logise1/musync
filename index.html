@@ -41,6 +41,23 @@
     <!-- Notificaciones flotantes -->
     <div id="toast-container" class="fixed top-4 left-1/2 -translate-x-1/2 z-50 flex flex-col gap-2 w-full max-w-sm px-4 pointer-events-none"></div>
 
+    <!-- Pantalla de Bienvenida (Forzar Clic para Fullscreen Global) -->
+    <div id="view-welcome" class="fixed inset-0 bg-zinc-950 z-[200] flex flex-col items-center justify-center p-6 transition-opacity duration-500">
+        <div class="w-20 h-20 rounded-3xl bg-red-600 flex items-center justify-center shadow-[0_0_40px_rgba(220,38,38,0.5)] mb-6 animate-pulse">
+            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        </div>
+        <h1 class="text-3xl font-black tracking-tight mb-2">Bienvenido</h1>
+        <p class="text-zinc-400 text-center mb-10 max-w-xs">Para disfrutar de la mejor experiencia inmersiva y que la música no se corte, activa la pantalla completa.</p>
+        
+        <button id="btn-start-fullscreen" class="w-full max-w-xs py-4 bg-red-600 hover:bg-red-500 text-white font-bold rounded-2xl shadow-lg transition-transform active:scale-95 flex justify-center items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+            Entrar en Pantalla Completa
+        </button>
+        <button id="btn-start-normal" class="mt-4 text-sm text-zinc-500 hover:text-zinc-300 font-medium">
+            Continuar normal
+        </button>
+    </div>
+
     <!-- Modal para Nueva Playlist -->
     <div id="modal-new-playlist" class="fixed inset-0 bg-black/80 z-[100] flex items-center justify-center p-4 backdrop-blur-sm transition-opacity opacity-0 pointer-events-none">
         <div class="bg-zinc-900 border border-zinc-800 rounded-2xl w-full max-w-sm overflow-hidden scale-95 transition-transform duration-200" id="modal-content-playlist">
@@ -63,7 +80,7 @@
     </div>
 
     <!-- VISTA: AUTH (Login/Registro) -->
-    <div id="view-auth" class="w-full max-w-md min-h-screen flex flex-col justify-center px-6 transition-opacity duration-300 absolute z-50 bg-zinc-950">
+    <div id="view-auth" class="w-full max-w-md min-h-screen flex flex-col justify-center px-6 transition-opacity duration-300 absolute z-50 bg-zinc-950 hidden">
         <div class="flex flex-col items-center mb-10">
             <div class="w-16 h-16 rounded-2xl bg-red-600 flex items-center justify-center shadow-[0_0_30px_rgba(220,38,38,0.4)] mb-4">
                 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
@@ -101,9 +118,14 @@
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-500"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
                 AudioSync
             </h1>
-            <div class="flex items-center gap-2 text-xs font-medium text-zinc-400 bg-zinc-900 py-1.5 px-3 rounded-full border border-zinc-800">
-                <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                <span id="header-username">...</span>
+            <div class="flex items-center gap-2">
+                <button id="btn-toggle-fs-dash" class="p-2 text-zinc-400 hover:text-white transition-colors bg-zinc-900 rounded-full border border-zinc-800" title="Pantalla Completa Global">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+                </button>
+                <div class="flex items-center gap-2 text-xs font-medium text-zinc-400 bg-zinc-900 py-1.5 px-3 rounded-full border border-zinc-800 ml-2">
+                    <span class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
+                    <span id="header-username">...</span>
+                </div>
             </div>
         </header>
 
@@ -152,7 +174,6 @@
 
             <!-- TAB: PLAYLISTS -->
             <div id="tab-playlists" class="tab-content hidden space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300 w-full">
-                
                 <div class="flex items-center justify-between">
                     <div>
                         <h2 class="text-xl font-bold">Mis Playlists</h2>
@@ -163,14 +184,10 @@
                     </button>
                 </div>
 
-                <!-- Lista de Playlists del Usuario -->
                 <div id="user-playlists-container" class="space-y-3">
-                    <div class="p-6 text-center bg-zinc-900 border border-zinc-800 rounded-2xl border-dashed text-zinc-500 text-sm">
-                        Cargando...
-                    </div>
+                    <div class="p-6 text-center bg-zinc-900 border border-zinc-800 rounded-2xl border-dashed text-zinc-500 text-sm">Cargando...</div>
                 </div>
 
-                <!-- Vista Detalle de una Playlist -->
                 <div id="playlist-detail-view" class="hidden flex flex-col bg-zinc-900/50 border border-zinc-800 rounded-2xl overflow-hidden mt-6">
                     <div class="p-4 border-b border-zinc-800 flex items-center justify-between bg-zinc-900">
                         <div class="flex items-center gap-3">
@@ -186,9 +203,7 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg>
                         </button>
                     </div>
-                    <div id="detail-pl-tracks" class="p-2 space-y-1 max-h-[50vh] overflow-y-auto">
-                        <!-- Tracks generados por JS -->
-                    </div>
+                    <div id="detail-pl-tracks" class="p-2 space-y-1 max-h-[50vh] overflow-y-auto"></div>
                 </div>
             </div>
 
@@ -230,6 +245,13 @@
                         <button id="btn-toggle-beta" class="w-12 h-6 rounded-full bg-zinc-700 relative transition-colors duration-200 shrink-0">
                             <div id="toggle-knob" class="w-4 h-4 rounded-full bg-white absolute top-1 left-1 transition-transform duration-200"></div>
                         </button>
+                    </div>
+                    <div class="p-4 flex items-center justify-between border-b border-zinc-800">
+                        <div>
+                            <h3 class="font-bold text-sm">Pantalla Completa</h3>
+                            <p class="text-[11px] text-zinc-500 mt-1">Oculta la interfaz del navegador.</p>
+                        </div>
+                        <button id="btn-toggle-fs-profile" class="px-3 py-1.5 bg-zinc-800 text-zinc-300 rounded-lg text-xs font-bold hover:bg-zinc-700 transition-colors">Alternar App</button>
                     </div>
                     <div class="p-4 flex items-center justify-between">
                         <div>
@@ -298,8 +320,9 @@
                 
                 <div class="p-5 rounded-2xl bg-zinc-900/80 border border-zinc-800 relative overflow-hidden backdrop-blur-md">
                     
-                    <div id="video-container" class="w-full aspect-video bg-black rounded-xl overflow-hidden mb-5 relative shadow-inner group border border-zinc-800">
-                        <button id="btn-fullscreen" class="absolute top-2 left-2 p-2 bg-black/60 hover:bg-black/90 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-10">
+                    <div id="video-container" class="w-full aspect-video bg-black rounded-xl overflow-hidden mb-5 relative shadow-inner border border-zinc-800 group">
+                        <!-- El botón dentro del vídeo ahora expande la app global -->
+                        <button id="btn-fullscreen" class="absolute top-2 left-2 p-2 bg-black/60 hover:bg-black/90 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity z-10" title="Pantalla Completa App">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
                         </button>
                         <div id="next-track-overlay" class="absolute top-4 right-4 bg-black/80 backdrop-blur-md border border-zinc-700 rounded-xl p-3 flex items-center gap-3 transition-opacity duration-300 opacity-0 pointer-events-none z-20 shadow-2xl">
@@ -411,7 +434,7 @@
         // --- ESTADO GLOBAL ---
         let currentUser = null; let myUsername = ""; let myPrivateInfo = { recentRooms: [], friends: [] };
         let currentRoomCode = null; let unsubscribeRoom = null; let unsubscribePrivate = null; let currentAudioMeta = null;
-        let localMediaFormat = 'mp4'; // MP4 por defecto para el FullScreen
+        let localMediaFormat = 'mp4'; // MP4 por defecto
         let useBetaStream = localStorage.getItem('useBetaStream') === 'true'; let isHost = false; 
         let isApplyingRemoteEvent = false; let lastEventTimestamp = 0; let isMediaDownloaded = false; let pendingEvent = null; let isDraggingSlider = false; let roomDataCache = null; 
 
@@ -426,6 +449,10 @@
         let currentlyViewingPlaylistId = null;
 
         // --- REFERENCIAS DOM ---
+        const vWelcome = document.getElementById('view-welcome');
+        const btnStartFs = document.getElementById('btn-start-fullscreen');
+        const btnStartNormal = document.getElementById('btn-start-normal');
+        
         const vAuth = document.getElementById('view-auth'); const vDash = document.getElementById('view-dashboard'); const vRoom = document.getElementById('view-room');
         const toastContainer = document.getElementById('toast-container');
         const authUsernameInput = document.getElementById('auth-username'); const authPasswordInput = document.getElementById('auth-password');
@@ -445,10 +472,15 @@
         const profileUsername = document.getElementById('profile-username'); const profileAvatarLetter = document.getElementById('profile-avatar-letter');
         const headerUsername = document.getElementById('header-username'); const btnToggleBeta = document.getElementById('btn-toggle-beta');
         const toggleKnob = document.getElementById('toggle-knob'); const btnLogout = document.getElementById('btn-logout');
+        
+        const btnToggleFsDash = document.getElementById('btn-toggle-fs-dash');
+        const btnToggleFsProfile = document.getElementById('btn-toggle-fs-profile');
+        
         const btnLeaveRoom = document.getElementById('btn-leave-room'); const displayCode = document.getElementById('display-code');
         const displayRoomLabel = document.getElementById('display-room-label'); const hostBadge = document.getElementById('host-badge');
         const btnClaimHost = document.getElementById('btn-claim-host'); const mediaEl = document.getElementById('sync-media');
-        const videoContainer = document.getElementById('video-container'); const btnFullscreen = document.getElementById('btn-fullscreen');
+        const videoContainer = document.getElementById('video-container'); 
+        const btnFullscreen = document.getElementById('btn-fullscreen'); // El botón dentro del vídeo
         const nextOverlay = document.getElementById('next-track-overlay'); const nextCountdown = document.getElementById('next-countdown'); const nextTitle = document.getElementById('next-title');
         const btnPlayPause = document.getElementById('btn-play-pause'); const btnSkip = document.getElementById('btn-skip');
         const streamStatus = document.getElementById('stream-status'); const timeTotal = document.getElementById('time-total');
@@ -472,7 +504,37 @@
         const generateEmail = (username) => `${username.toLowerCase().replace(/[^a-z0-9]/g, '')}@audiosync.local`;
         const extractVideoId = (url) => { const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/i); return match ? match[1] : null; };
 
-        // --- AUTH LOGIC (CON PERSISTENCIA) ---
+        // --- FULLSCREEN GLOBAL APP ---
+        const toggleAppFullscreen = () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error intentando activar fullscreen: ${err.message}`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        };
+        
+        btnToggleFsDash.addEventListener('click', toggleAppFullscreen);
+        btnToggleFsProfile.addEventListener('click', toggleAppFullscreen);
+        btnFullscreen.addEventListener('click', toggleAppFullscreen); // Botón del vídeo
+
+        // Control de Pantalla de Bienvenida
+        const hideWelcomeScreen = () => {
+            vWelcome.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => vWelcome.classList.add('hidden'), 500);
+        };
+
+        btnStartFs.addEventListener('click', () => {
+            toggleAppFullscreen();
+            hideWelcomeScreen();
+        });
+        
+        btnStartNormal.addEventListener('click', hideWelcomeScreen);
+
+        // --- AUTH LOGIC ---
         setPersistence(auth, browserLocalPersistence).then(() => {
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
@@ -636,24 +698,15 @@
             if (localMediaFormat === 'mp3') {
                 document.getElementById('btn-format-mp3').className = "px-2 py-1 text-[10px] font-bold rounded bg-red-600 text-white transition-all shadow-sm";
                 document.getElementById('btn-format-mp4').className = "px-2 py-1 text-[10px] font-bold rounded text-zinc-400 hover:text-white transition-all";
-                videoContainer.classList.add('hidden'); if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
             } else {
                 document.getElementById('btn-format-mp4').className = "px-2 py-1 text-[10px] font-bold rounded bg-red-600 text-white transition-all shadow-sm";
                 document.getElementById('btn-format-mp3').className = "px-2 py-1 text-[10px] font-bold rounded text-zinc-400 hover:text-white transition-all";
-                videoContainer.classList.remove('hidden');
             }
         };
-        updateFormatUI(); // Inicializar interfaz MP4
+        updateFormatUI(); 
         
         document.getElementById('btn-format-mp3').addEventListener('click', () => { if (localMediaFormat !== 'mp3') { localMediaFormat = 'mp3'; updateFormatUI(); if (currentAudioMeta) downloadAndPrepare(currentAudioMeta); } });
         document.getElementById('btn-format-mp4').addEventListener('click', () => { if (localMediaFormat !== 'mp4') { localMediaFormat = 'mp4'; updateFormatUI(); if (currentAudioMeta) downloadAndPrepare(currentAudioMeta); } });
-        
-        const tryFullscreen = () => {
-            if(localMediaFormat === 'mp4' && videoContainer.requestFullscreen) {
-                videoContainer.requestFullscreen().catch(()=>{}); // Falla silenciosa si no fue click directo
-            }
-        };
-        btnFullscreen.addEventListener('click', () => { if (!document.fullscreenElement) tryFullscreen(); else document.exitFullscreen().catch(()=>{}); });
 
         // --- ROLES (BUGFIXES SALAS COMPARTIDAS) ---
         const updateRoleUI = () => {
@@ -995,6 +1048,8 @@
             const d = (currentAudioMeta && currentAudioMeta.duration) ? currentAudioMeta.duration : mediaEl.duration; if (!d || d === Infinity || isNaN(d)) return;
             if (!isDraggingSlider) { seekInput.value = (mediaEl.currentTime / d) * 100; progressFill.style.width = `${seekInput.value}%`; timeCurrent.textContent = formatTime(mediaEl.currentTime); }
             if (mediaEl.buffered.length > 0) { const end = mediaEl.buffered.end(mediaEl.buffered.length - 1); document.getElementById('audio-buffer').style.width = `${(end / d) * 100}%`; }
+            
+            // Lógica overlay siguiente (Modificada para que funcione incluso si la app entera está en FS)
             if (document.fullscreenElement) {
                 const rem = d - mediaEl.currentTime;
                 if (rem <= 10 && rem > 0 && roomDataCache && roomDataCache.queue && roomDataCache.queue.length > 0) {
@@ -1017,7 +1072,6 @@
             vDash.classList.add('hidden'); vRoom.classList.remove('hidden');
             ytResultsContainer.innerHTML = ''; ytSearchInput.value = '';
             listenToRoom(code); saveRecentRoom(code);
-            tryFullscreen(); // Intenta entrar en FS al crear/unirse
         };
 
         const joinRoomLogic = async (code) => {
@@ -1047,7 +1101,6 @@
             if (unsubscribeRoom) unsubscribeRoom(); currentRoomCode = null; roomDataCache = null; mediaEl.pause(); mediaEl.src = '';
             vRoom.classList.add('hidden'); vDash.classList.remove('hidden');
             trackTitle.textContent = "Nada sonando"; trackUser.textContent = "Busca una canción abajo"; trackThumb.classList.add('hidden'); trackPlaceholder.classList.remove('hidden'); timeTotal.textContent = "0:00"; streamStatus.textContent = "Esperando...";
-            if (document.fullscreenElement) document.exitFullscreen().catch(()=>{});
         };
         btnLeaveRoom.addEventListener('click', leaveRoom); window.addEventListener('beforeunload', leaveRoom); 
 
